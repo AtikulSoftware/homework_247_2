@@ -2,6 +2,7 @@ package com.bdtopcoder.homework_247_2;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -23,119 +24,128 @@ import java.util.HashMap;
 
 public class SongList extends AppCompatActivity {
 
-    public static ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
+   public static ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
 
-    boolean isPlayIcon = false;
+   boolean isPlayIcon = false;
 
-    ListView listView;
-    MediaPlayer mediaPlayer;
+   ListView listView;
+   MediaPlayer mediaPlayer;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_song_list);
+   @Override
+   protected void onCreate(Bundle savedInstanceState) {
+      super.onCreate(savedInstanceState);
+      EdgeToEdge.enable(this);
+      setContentView(R.layout.activity_song_list);
+      ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+         Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+         v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+         return insets;
+      });
 
-        // initialize
-        listView = findViewById(R.id.listView);
+      // initialize
+      listView = findViewById(R.id.listView);
 
-        // Adapter কে পরিচয় করিয়ে দেওয়া হয়েছে এবং list এর মধ্যে set করে দেওয়া হয়েছে ।
-        MyAdapter myAdapter = new MyAdapter();
-        listView.setAdapter(myAdapter);
+      // initialize audio
+      mediaPlayer = new MediaPlayer();
+      mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
-    } // onCreate method end here =========
+      // Adapter কে পরিচয় করিয়ে দেওয়া হয়েছে এবং list এর মধ্যে set করে দেওয়া হয়েছে ।
+      MyAdapter myAdapter = new MyAdapter();
+      listView.setAdapter(myAdapter);
 
-    public class MyAdapter extends BaseAdapter {
+   } // onCreate method end here =========
 
-        @Override
-        public int getCount() {
-            return arrayList.size();
-        }
+   public class MyAdapter extends BaseAdapter {
 
-        @Override
-        public Object getItem(int position) {
-            return null;
-        }
+      @Override
+      public int getCount() {
+         return arrayList.size();
+      }
 
-        @Override
-        public long getItemId(int position) {
-            return 0;
-        }
+      @Override
+      public Object getItem(int position) {
+         return null;
+      }
 
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            LayoutInflater layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            @SuppressLint("ViewHolder") View myView = layoutInflater.inflate(R.layout.list_item, parent, false);
+      @Override
+      public long getItemId(int position) {
+         return 0;
+      }
 
-            // পরিচয় করিয়ে দেওয়া হয়েছে ।
-            TextView tvTitle = myView.findViewById(R.id.tvTitle);
-            TextView tvDescription = myView.findViewById(R.id.tvDescription);
-            ImageView tvSong = myView.findViewById(R.id.tvSong);
-            ImageView imgPlay = myView.findViewById(R.id.imgPlay);
+      @Override
+      public View getView(int position, View convertView, ViewGroup parent) {
+         LayoutInflater layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+         @SuppressLint("ViewHolder") View myView = layoutInflater.inflate(R.layout.list_item, parent, false);
 
-            // list থেকে data get করা হয়েছে ।
-            HashMap<String, String> hashMap1 = arrayList.get(position);
-            String title = hashMap1.get("title");
-            String description = hashMap1.get("description");
-            String songImg = hashMap1.get("songImg");
-            String song = hashMap1.get("song");
+         // পরিচয় করিয়ে দেওয়া হয়েছে ।
+         TextView tvTitle = myView.findViewById(R.id.tvTitle);
+         TextView tvDescription = myView.findViewById(R.id.tvDescription);
+         ImageView tvSong = myView.findViewById(R.id.tvSong);
+         ImageView imgPlay = myView.findViewById(R.id.imgPlay);
 
-            // data list item এ set করে দেওয়া হয়েছে ।
-            tvTitle.setText(title);
-            tvDescription.setText(description);
-            tvSong.setImageResource(Integer.parseInt(songImg));
+         // list থেকে data get করা হয়েছে ।
+         HashMap<String, String> hashMap1 = arrayList.get(position);
+         String title = hashMap1.get("title");
+         String description = hashMap1.get("description");
+         String songImg = hashMap1.get("songImg");
+         String song = hashMap1.get("song");
 
-            int mySong = Integer.parseInt(song);
+         // data list item এ set করে দেওয়া হয়েছে ।
+         tvTitle.setText(title);
+         tvDescription.setText(description);
+         tvSong.setImageResource(Integer.parseInt(songImg));
 
-            // onClick লেখা হয়েছে ।
-            imgPlay.setOnClickListener(v -> {
+//         int mySong = Integer.parseInt(song);
 
-                if (imgPlay.getTag() != null && imgPlay.getTag().toString().contains("NOT_PLAYING")) {
-                    if (mediaPlayer != null) mediaPlayer.release();
-                    mediaPlayer = MediaPlayer.create(SongList.this, mySong);
-                    mediaPlayer.start();
-                    imgPlay.setImageResource(R.drawable.stop_icon);
-                    imgPlay.setTag("PLAYING_NOW");
+         // onClick লেখা হয়েছে ।
+         imgPlay.setOnClickListener(v -> {
+            try {
+               if (imgPlay.getTag() == null || imgPlay.getTag().toString().equals("NOT_PLAYING")) {
+                  if (mediaPlayer == null) {
+                     mediaPlayer = new MediaPlayer();
+                  } else {
+                     mediaPlayer.reset();
+                  }
 
-                    // when complete the song
-                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                        @Override
-                        public void onCompletion(MediaPlayer mp) {
-                            imgPlay.setImageResource(R.drawable.play_icon);
-                            imgPlay.setTag("NOT_PLAYING");
-                        }
-                    });
+                  mediaPlayer.setDataSource(song);
+                  mediaPlayer.prepare();
+                  mediaPlayer.start();
 
-                    isPlayIcon = false;
+                  imgPlay.setImageResource(R.drawable.stop_icon);
+                  imgPlay.setTag("PLAYING_NOW");
 
-                } else {
-                    if (mediaPlayer != null) mediaPlayer.release();
-                    imgPlay.setImageResource(R.drawable.play_icon);
-                    imgPlay.setTag("NOT_PLAYING");
-                    isPlayIcon = true;
+                  // When playback is completed
+                  mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                     @Override
+                     public void onCompletion(MediaPlayer mp) {
+                        imgPlay.setImageResource(R.drawable.play_icon);
+                        imgPlay.setTag("NOT_PLAYING");
+                        mediaPlayer.release();
+                        mediaPlayer = null;
+                     }
+                  });
 
-                }
+               } else if (imgPlay.getTag().toString().equals("PLAYING_NOW")) {
+                  if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                     mediaPlayer.stop();
+                     mediaPlayer.release();
+                     mediaPlayer = null;
+                  }
 
-                // icon play reset
-                for (int xx = 0; xx < listView.getChildCount(); xx++) {
-                    View xxView = listView.getChildAt(xx);
-                    ImageView xxImageView = xxView.findViewById(R.id.imgPlay);
-                    xxImageView.setImageResource(R.drawable.play_icon);
-                }
-
-                if (!isPlayIcon){
-                    imgPlay.setImageResource(R.drawable.stop_icon);
-                }
-
-            });
-
-
-            return myView;
-        }
-
-
-    } // MyAdapter end here =================
+                  imgPlay.setImageResource(R.drawable.play_icon);
+                  imgPlay.setTag("NOT_PLAYING");
+               }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+         });
 
 
+         return myView;
+      }
+
+
+   } // MyAdapter end here =================
 
 
 } // public class end here ================
